@@ -1,4 +1,4 @@
-import {inject, Context, MetadataInspector, Binding} from '@loopback/context';
+import {inject, Context, MetadataInspector} from '@loopback/context';
 import {
   Server,
   Application,

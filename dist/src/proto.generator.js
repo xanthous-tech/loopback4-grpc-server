@@ -44,7 +44,8 @@ class ProtoGenerator {
         this.getProtoPaths().forEach((protoPath) => {
             const protoName = protoPath.split('/').pop() || '';
             this.protos[protoName] = this.loadProto(protoPath);
-            this.generate(protoPath);
+            this.generateJS(protoPath);
+            this.generateTS(protoPath);
         });
     }
     /**
@@ -94,20 +95,36 @@ class ProtoGenerator {
         return glob.sync(pattern, options);
     }
     /**
-     * @method generate
+     * @method generateTS
      * @param {string} proto
      * @returns {Buffer}
      * @author Jonathan Casarrubias <t: johncasarrubias>
      * @license MIT
      * @description This method will generate a typescript
      * file representing the provided proto file by calling
-     * google's proto compiler and using @mean-experts's
+     * google's proto compiler and using @agreatfool's
      * protoc-ts plugin.
      */
-    generate(proto) {
+    generateTS(proto) {
         const root = path.dirname(proto);
         return child_process_1.execSync(`${path.join(__dirname, '../', '../', // Root of grpc module and not the dist dir
         'compilers', process.platform, 'bin', 'protoc')} --plugin=protoc-gen-ts=${path.join(process.cwd(), 'node_modules', '.bin', 'protoc-gen-ts')} --ts_out ${root} -I ${root} ${proto}`);
+    }
+    /**
+     * @method generateJS
+     * @param {string} proto
+     * @returns {Buffer}
+     * @author Simon Liang
+     * @license MIT
+     * @description This method will generate a javascript
+     * file representing the provided proto file by calling
+     * google's proto compiler and using @agreatfool's
+     * protoc-ts plugin.
+     */
+    generateJS(proto) {
+        const root = path.dirname(proto);
+        const protocPath = path.join(process.cwd(), 'node_modules', '.bin', 'grpc_tools_node_protoc');
+        return child_process_1.execSync(`${protocPath} --js_out=import_style=commonjs,binary:${root} --plugin=protoc-gen-gprc=${protocPath} --grpc_out=${root} -I ${root} ${proto}`);
     }
 }
 exports.ProtoGenerator = ProtoGenerator;

@@ -3,7 +3,6 @@ import {execSync} from 'child_process';
 import * as grpc from 'grpc';
 import * as path from 'path';
 import * as glob from 'glob';
-import {stringify} from 'querystring';
 /**
  * @class GrpcGenerator
  * @author Jonathan Casarrubias <t: johncasarrubias>
@@ -42,7 +41,8 @@ export class ProtoGenerator {
     this.getProtoPaths().forEach((protoPath: string) => {
       const protoName: string = protoPath.split('/').pop() || '';
       this.protos[protoName] = this.loadProto(protoPath);
-      this.generate(protoPath);
+      this.generateJS(protoPath);
+      this.generateTS(protoPath);
     });
   }
   /**
@@ -93,17 +93,17 @@ export class ProtoGenerator {
   }
 
   /**
-   * @method generate
+   * @method generateTS
    * @param {string} proto
    * @returns {Buffer}
    * @author Jonathan Casarrubias <t: johncasarrubias>
    * @license MIT
    * @description This method will generate a typescript
    * file representing the provided proto file by calling
-   * google's proto compiler and using @mean-experts's
+   * google's proto compiler and using @agreatfool's
    * protoc-ts plugin.
    */
-  private generate(proto: string): Buffer {
+  private generateTS(proto: string): Buffer {
     const root = path.dirname(proto);
     return execSync(
       `${path.join(
@@ -120,6 +120,32 @@ export class ProtoGenerator {
         '.bin',
         'protoc-gen-ts',
       )} --ts_out ${root} -I ${root} ${proto}`,
+    );
+  }
+
+  /**
+   * @method generateJS
+   * @param {string} proto
+   * @returns {Buffer}
+   * @author Simon Liang
+   * @license MIT
+   * @description This method will generate a javascript
+   * file representing the provided proto file by calling
+   * google's proto compiler and using @agreatfool's
+   * protoc-ts plugin.
+   */
+  private generateJS(proto: string): Buffer {
+    const root = path.dirname(proto);
+
+    const protocPath = path.join(
+      process.cwd(),
+      'node_modules',
+      '.bin',
+      'grpc_tools_node_protoc',
+    );
+
+    return execSync(
+      `${protocPath} --js_out=import_style=commonjs,binary:${root} --plugin=protoc-gen-gprc=${protocPath} --grpc_out=${root} -I ${root} ${proto}`,
     );
   }
 }

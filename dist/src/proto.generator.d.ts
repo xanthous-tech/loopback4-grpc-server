@@ -67,15 +67,27 @@ export declare class ProtoGenerator {
      */
     getProtoPaths(): string[];
     /**
-     * @method generate
+     * @method generateTS
      * @param {string} proto
      * @returns {Buffer}
      * @author Jonathan Casarrubias <t: johncasarrubias>
      * @license MIT
      * @description This method will generate a typescript
      * file representing the provided proto file by calling
-     * google's proto compiler and using @mean-experts's
+     * google's proto compiler and using @agreatfool's
      * protoc-ts plugin.
      */
-    private generate;
+    private generateTS;
+    /**
+     * @method generateJS
+     * @param {string} proto
+     * @returns {Buffer}
+     * @author Simon Liang
+     * @license MIT
+     * @description This method will generate a javascript
+     * file representing the provided proto file by calling
+     * google's proto compiler and using @agreatfool's
+     * protoc-ts plugin.
+     */
+    private generateJS;
 }
