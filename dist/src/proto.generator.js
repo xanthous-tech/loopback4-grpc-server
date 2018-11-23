@@ -44,6 +44,7 @@ class ProtoGenerator {
         this.getProtoPaths().forEach((protoPath) => {
             const protoName = protoPath.split('/').pop() || '';
             this.protos[protoName] = this.loadProto(protoPath);
+            console.log(protoPath);
             this.generateJS(protoPath);
             this.generateTS(protoPath);
         });
@@ -124,7 +125,9 @@ class ProtoGenerator {
     generateJS(proto) {
         const root = path.dirname(proto);
         const protocPath = path.join(process.cwd(), 'node_modules', '.bin', 'grpc_tools_node_protoc');
-        return child_process_1.execSync(`${protocPath} --js_out=import_style=commonjs,binary:${root} --plugin=protoc-gen-gprc=${protocPath} --grpc_out=${root} -I ${root} ${proto}`);
+        return child_process_1.execSync(`${protocPath} --js_out=import_style=commonjs,binary:${'dist/' +
+            root} --plugin=protoc-gen-gprc=${protocPath} --grpc_out=${'dist/' +
+            root} -I ${root} ${proto}`);
     }
 }
 exports.ProtoGenerator = ProtoGenerator;

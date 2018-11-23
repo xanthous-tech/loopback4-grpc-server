@@ -18,7 +18,7 @@ export class MyApplication extends Application {
     this.options.port = this.options.port || 3000;
     this.bind(GrpcBindings.SERVER_CONFIG).to({
       host: '0.0.0.0',
-      port: 3001,
+      port: 50051,
       'grpc.max_send_message_length': 1024 * 1024 * 1024,
     });
     this.bind(GrpcBindings.GENERATOR_CONFIG).to({});

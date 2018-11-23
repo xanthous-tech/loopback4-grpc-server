@@ -41,6 +41,7 @@ export class ProtoGenerator {
     this.getProtoPaths().forEach((protoPath: string) => {
       const protoName: string = protoPath.split('/').pop() || '';
       this.protos[protoName] = this.loadProto(protoPath);
+      console.log(protoPath);
       this.generateJS(protoPath);
       this.generateTS(protoPath);
     });
@@ -145,7 +146,9 @@ export class ProtoGenerator {
     );
 
     return execSync(
-      `${protocPath} --js_out=import_style=commonjs,binary:${root} --plugin=protoc-gen-gprc=${protocPath} --grpc_out=${root} -I ${root} ${proto}`,
+      `${protocPath} --js_out=import_style=commonjs,binary:${'dist/' +
+        root} --plugin=protoc-gen-gprc=${protocPath} --grpc_out=${'dist/' +
+        root} -I ${root} ${proto}`,
     );
   }
 }

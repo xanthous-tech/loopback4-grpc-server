@@ -10,12 +10,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const book_grpc_pb_1 = require("./book_grpc_pb");
 const book_pb_1 = require("./book_pb");
 const service_decorator_1 = require("../decorators/service.decorator");
+const log = console.log;
 let BookController = class BookController {
     getBook(call, callback) {
         const book = new book_pb_1.Book();
         book.setTitle('DefaultBook');
         book.setAuthor('DefaultAuthor');
-        // log(`[getBook] Done: ${JSON.stringify(book.toObject())}`);
+        log(`[getBook] Done: ${JSON.stringify(book.toObject())}`);
         callback(null, book);
     }
     getBooks(call) {
@@ -24,33 +25,31 @@ let BookController = class BookController {
             reply.setTitle(`Book${request.getIsbn()}`);
             reply.setAuthor(`Author${request.getIsbn()}`);
             reply.setIsbn(request.getIsbn());
-            // log(`[getBooks] Write: ${JSON.stringify(reply.toObject())}`);
+            log(`[getBooks] Write: ${JSON.stringify(reply.toObject())}`);
             call.write(reply);
         });
         call.on('end', () => {
-            // log('[getBooks] Done.');
+            log('[getBooks] Done.');
             call.end();
         });
     }
     getBooksViaAuthor(call) {
-        // log(
-        //  `[getBooksViaAuthor] Request: ${JSON.stringify(call.request.toObject())}`,
-        // );
+        log(`[getBooksViaAuthor] Request: ${JSON.stringify(call.request.toObject())}`);
         for (let i = 1; i <= 10; i++) {
             const reply = new book_pb_1.Book();
             reply.setTitle(`Book${i}`);
             reply.setAuthor(call.request.getAuthor());
             reply.setIsbn(i);
-            // log(`[getBooksViaAuthor] Write: ${JSON.stringify(reply.toObject())}`);
+            log(`[getBooksViaAuthor] Write: ${JSON.stringify(reply.toObject())}`);
             call.write(reply);
         }
-        // log('[getBooksViaAuthor] Done.');
+        log('[getBooksViaAuthor] Done.');
         call.end();
     }
     getGreatestBook(call, callback) {
         let lastOne;
         call.on('data', (request) => {
-            // log(`[getGreatestBook] Request: ${JSON.stringify(request.toObject())}`);
+            log(`[getGreatestBook] Request: ${JSON.stringify(request.toObject())}`);
             lastOne = request;
         });
         call.on('end', () => {
@@ -58,7 +57,7 @@ let BookController = class BookController {
             reply.setIsbn(lastOne.getIsbn());
             reply.setTitle('LastOne');
             reply.setAuthor('LastOne');
-            // log(`[getGreatestBook] Done: ${JSON.stringify(reply.toObject())}`);
+            log(`[getGreatestBook] Done: ${JSON.stringify(reply.toObject())}`);
             callback(null, reply);
         });
     }
