@@ -1,0 +1,55 @@
+{
+  "name": "@loopback/example-rpc-server",
+  "version": "1.0.3",
+  "description": "A basic RPC server using a made-up protocol.",
+  "keywords": [
+    "loopback-application",
+    "loopback"
+  ],
+  "engines": {
+    "node": ">=8.9"
+  },
+  "scripts": {
+    "build:apidocs": "lb-apidocs",
+    "build": "lb-tsc es2017 --outDir dist",
+    "build:watch": "lb-tsc es2017 --outDir dist --watch",
+    "clean": "lb-clean dist",
+    "lint": "npm run prettier:check && npm run tslint",
+    "lint:fix": "npm run tslint:fix && npm run prettier:fix",
+    "prettier:cli": "lb-prettier \"**/*.ts\"",
+    "prettier:check": "npm run prettier:cli -- -l",
+    "prettier:fix": "npm run prettier:cli -- --write",
+    "tslint": "lb-tslint",
+    "tslint:fix": "npm run tslint -- --fix",
+    "pretest": "npm run clean && npm run build",
+    "test": "lb-mocha dist/test",
+    "posttest": "npm run lint",
+    "test:dev": "lb-mocha --allow-console-logs dist/test/**/*.js && npm run posttest",
+    "prestart": "npm run build",
+    "start": "node ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/strongloop/loopback-next.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@loopback/context": "^1.1.0",
+    "@loopback/core": "^1.1.0",
+    "@loopback/metadata": "^1.0.1",
+    "@types/google-protobuf": "^3.2.7",
+    "debug": "^4.1.0",
+    "grpc": "^1.16.1",
+    "grpc_tools_node_protoc_ts": "^2.4.1"
+  },
+  "devDependencies": {
+    "@loopback/build": "^1.0.1",
+    "@loopback/testlab": "^1.0.1",
+    "@types/node": "^10.11.2",
+    "@types/protobufjs": "^6.0.0"
+  }
+}

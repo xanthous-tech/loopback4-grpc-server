@@ -1,0 +1,1 @@
+{"version":3,"file":"grpc.component.js","sourceRoot":"","sources":["../../src/grpc.component.ts"],"names":[],"mappings":";;AACA,mDAA6C;AAC7C,uEAAiE;AACjE,+CAAyC;AAEzC,MAAa,aAAa;IAA1B;QACE,cAAS,GAAgB;YACvB,CAAC,4BAAY,CAAC,SAAS,CAAC,EAAE,sCAAiB;SAC5C,CAAC;QAEF,YAAO,GAA0C;YAC/C,UAAU,EAAV,wBAAU;SACX,CAAC;IACJ,CAAC;CAAA;AARD,sCAQC"}

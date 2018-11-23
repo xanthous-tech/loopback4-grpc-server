@@ -1,0 +1,1 @@
+{"version":3,"file":"grpc.bindings.js","sourceRoot":"","sources":["../../src/grpc.bindings.ts"],"names":[],"mappings":";;AAAA,IAAiB,YAAY,CAK5B;AALD,WAAiB,YAAY;IACd,0BAAa,GAAG,mBAAmB,CAAC;IACpC,sBAAS,GAAG,gBAAgB,CAAC;IAC7B,6BAAgB,GAAG,uBAAuB,CAAC;IAC3C,+BAAkB,GAAG,yBAAyB,CAAC;AAC9D,CAAC,EALgB,YAAY,GAAZ,oBAAY,KAAZ,oBAAY,QAK5B"}
