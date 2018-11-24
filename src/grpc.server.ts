@@ -37,10 +37,6 @@ export class GrpcServer extends Context implements Server {
     // work out grpc server options
     this._host = this.config.host || '127.0.0.1';
     this._port = this.config.port || 3000;
-    delete this.config.host;
-    delete this.config.port;
-    // don't need the sequence here
-    delete this.config.sequence;
 
     // create new grpc server with config
     this._server = new grpc.Server(this.config);
