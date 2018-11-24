@@ -2,27 +2,35 @@
 
 import * as grpc from 'grpc';
 
-import {BookServiceService, IBookServiceServer} from './book_grpc_pb';
+import {BookServiceService} from './book_grpc_pb';
 import {Book, GetBookRequest, GetBookViaAuthor} from './book_pb';
-import {grpcService} from '../decorators/service.decorator';
+import {
+  grpcService,
+  grpcServiceMethod,
+} from '../../../src/decorators/grpc.decorator';
 
 const log = console.log;
 
-@grpcService({serviceDefiniton: BookServiceService})
-export class BookController implements IBookServiceServer {
-  getBook(
-    call: grpc.ServerUnaryCall<GetBookRequest>,
-    callback: grpc.sendUnaryData<Book>,
-  ) {
+@grpcService({
+  serviceDefiniton: BookServiceService,
+})
+export class BookController {
+  @grpcServiceMethod({
+    methodDefinition: BookServiceService.getBook,
+  })
+  async getBook(request: GetBookRequest): Promise<Book> {
     const book = new Book();
 
     book.setTitle('DefaultBook');
     book.setAuthor('DefaultAuthor');
 
     log(`[getBook] Done: ${JSON.stringify(book.toObject())}`);
-    callback(null, book);
+    return book;
   }
 
+  @grpcServiceMethod({
+    methodDefinition: BookServiceService.getBooks,
+  })
   getBooks(call: grpc.ServerDuplexStream<GetBookRequest, Book>) {
     call.on('data', (request: GetBookRequest) => {
       const reply = new Book();
@@ -38,6 +46,9 @@ export class BookController implements IBookServiceServer {
     });
   }
 
+  @grpcServiceMethod({
+    methodDefinition: BookServiceService.getBooksViaAuthor,
+  })
   getBooksViaAuthor(call: grpc.ServerWriteableStream<GetBookViaAuthor>) {
     log(
       `[getBooksViaAuthor] Request: ${JSON.stringify(call.request.toObject())}`,
@@ -54,22 +65,26 @@ export class BookController implements IBookServiceServer {
     call.end();
   }
 
-  getGreatestBook(
+  @grpcServiceMethod({
+    methodDefinition: BookServiceService.getGreatestBook,
+  })
+  async getGreatestBook(
     call: grpc.ServerReadableStream<GetBookRequest>,
-    callback: grpc.sendUnaryData<Book>,
-  ) {
-    let lastOne: GetBookRequest;
-    call.on('data', (request: GetBookRequest) => {
-      log(`[getGreatestBook] Request: ${JSON.stringify(request.toObject())}`);
-      lastOne = request;
-    });
-    call.on('end', () => {
-      const reply = new Book();
-      reply.setIsbn(lastOne.getIsbn());
-      reply.setTitle('LastOne');
-      reply.setAuthor('LastOne');
-      log(`[getGreatestBook] Done: ${JSON.stringify(reply.toObject())}`);
-      callback(null, reply);
+  ): Promise<Book> {
+    return new Promise<Book>(resolve => {
+      let lastOne: GetBookRequest;
+      call.on('data', (request: GetBookRequest) => {
+        log(`[getGreatestBook] Request: ${JSON.stringify(request.toObject())}`);
+        lastOne = request;
+      });
+      call.on('end', () => {
+        const reply = new Book();
+        reply.setIsbn(lastOne.getIsbn());
+        reply.setTitle('LastOne');
+        reply.setAuthor('LastOne');
+        log(`[getGreatestBook] Done: ${JSON.stringify(reply.toObject())}`);
+        resolve(reply);
+      });
     });
   }
 }

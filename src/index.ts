@@ -1,19 +1,13 @@
 // Copyright IBM Corp. 2018. All Rights Reserved.
-// Node module: @loopback/example-rpc-server
+// Node module: @xanthous/loopback4-grpc-server
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {MyApplication} from './application';
-import {ApplicationConfig} from '@loopback/core';
-
-export async function main(options: ApplicationConfig = {}) {
-  const app = new MyApplication(options);
-
-  await app.start();
-  console.log(`Server is running on port ${app.options.port}`);
-  return app;
-}
-
-main().catch(err => {
-  console.error('Unhandled exception!');
-});
+export * from './decorators/grpc.decorator';
+export * from './providers/generator.provider';
+export * from './grpc.bindings';
+export * from './grpc.component';
+export * from './grpc.sequence';
+export * from './grpc.server';
+export * from './proto.generator';
+export * from './types';

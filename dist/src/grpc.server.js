@@ -31,6 +31,8 @@ let GrpcServer = class GrpcServer extends context_1.Context {
         this._port = this.config.port || 3000;
         delete this.config.host;
         delete this.config.port;
+        // don't need the sequence here
+        delete this.config.sequence;
         // create new grpc server with config
         this._server = new grpc.Server(this.config);
         // Setup Controllers
@@ -40,16 +42,83 @@ let GrpcServer = class GrpcServer extends context_1.Context {
             if (!ctor) {
                 throw new Error(`The controller ${controllerName} was not bound via .toClass()`);
             }
-            this._setupControllerMethods(ctor, b.getValue(app));
+            this._setupControllerMethods(ctor);
         }
         // binding server to host:port
         this._server.bind(`${this._host}:${this._port}`, grpc.ServerCredentials.createInsecure());
     }
-    _setupControllerMethods(ctor, instance) {
-        const metadata = context_1.MetadataInspector.getClassMetadata(grpc_bindings_1.GrpcBindings.SERVICE_DEFINITION, ctor);
-        if (metadata) {
-            this._server.addService(metadata.serviceDefiniton, instance);
+    _setupControllerMethods(ctor) {
+        const controllerMetadata = context_1.MetadataInspector.getClassMetadata(grpc_bindings_1.GrpcBindings.SERVICE_DEFINITION, ctor);
+        const controllerMethodsMetadata = context_1.MetadataInspector.getAllMethodMetadata(grpc_bindings_1.GrpcBindings.SERVICE_METHOD_DEFINITION, ctor.prototype);
+        if (controllerMetadata) {
+            this._server.addService(controllerMetadata.serviceDefiniton, this._wrapGrpcSequence(ctor, controllerMethodsMetadata));
         }
+    }
+    _wrapGrpcSequence(ctor, methodsMetadata) {
+        const context = this;
+        context.bind(grpc_bindings_1.GrpcBindings.SERVER_CONTEXT).to(context);
+        context
+            .bind(grpc_bindings_1.GrpcBindings.TEMP_CONTROLLER)
+            .toClass(ctor)
+            .inScope(context_1.BindingScope.CONTEXT);
+        if (!methodsMetadata) {
+            return {};
+        }
+        return Object.keys(methodsMetadata).reduce((wrappedMethods, methodName) => {
+            context.bind(grpc_bindings_1.GrpcBindings.TEMP_METHOD_NAME).to(methodName);
+            const bindingKey = context_1.BindingKey.create(grpc_bindings_1.GrpcBindings.SERVER_SEQUENCE);
+            const sequencePromise = context.get(bindingKey);
+            const methodMetadata = methodsMetadata[methodName];
+            const { methodDefinition } = methodMetadata;
+            const { requestStream, responseStream } = methodDefinition;
+            if (requestStream) {
+                if (responseStream) {
+                    // bidi stream
+                    wrappedMethods[methodName] = function (
+                    // tslint:disable-next-line:no-any
+                    call) {
+                        sequencePromise.then((sequence) => sequence.wrapBidiStreamingCall(call));
+                    };
+                }
+                else {
+                    // client stream
+                    wrappedMethods[methodName] = function (
+                    // tslint:disable-next-line:no-any
+                    call, 
+                    // tslint:disable-next-line:no-any
+                    callback) {
+                        sequencePromise
+                            .then((sequence) => sequence.wrapClientStreamingCall(call))
+                            .then(result => callback(null, result))
+                            .catch(error => callback(error, null));
+                    };
+                }
+            }
+            else {
+                if (responseStream) {
+                    // server streaming
+                    wrappedMethods[methodName] = function (
+                    // tslint:disable-next-line:no-any
+                    call) {
+                        sequencePromise.then((sequence) => sequence.wrapServerStreamingCall(call));
+                    };
+                }
+                else {
+                    // unary call
+                    wrappedMethods[methodName] = function (
+                    // tslint:disable-next-line:no-any
+                    call, 
+                    // tslint:disable-next-line:no-any
+                    callback) {
+                        sequencePromise
+                            .then((sequence) => sequence.wrapUnaryCall(call))
+                            .then(result => callback(null, result))
+                            .catch(error => callback(error, null));
+                    };
+                }
+            }
+            return wrappedMethods;
+        }, {});
     }
     get listening() {
         return this._listening;

@@ -5,10 +5,10 @@
 // License text available at https://opensource.org/licenses/MIT
 Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("@loopback/core");
-const grpc_bindings_1 = require("./grpc.bindings");
-const grpc_component_1 = require("./grpc.component");
+const grpc_bindings_1 = require("../../src/grpc.bindings");
+const grpc_component_1 = require("../../src/grpc.component");
 const book_controller_1 = require("./controllers/book.controller");
-class MyApplication extends core_1.Application {
+class TestApplication extends core_1.Application {
     constructor(options = {}) {
         // Allow options to replace the defined components array, if desired.
         super(options);
@@ -23,5 +23,5 @@ class MyApplication extends core_1.Application {
         this.options.port = this.options.port || 3000;
     }
 }
-exports.MyApplication = MyApplication;
+exports.TestApplication = TestApplication;
 //# sourceMappingURL=application.js.map

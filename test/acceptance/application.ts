@@ -4,23 +4,23 @@
 // License text available at https://opensource.org/licenses/MIT
 
 import {Application, ApplicationConfig} from '@loopback/core';
-import {GrpcBindings} from './grpc.bindings';
-import {GrpcComponent} from './grpc.component';
+import {GrpcBindings} from '../../src/grpc.bindings';
+import {GrpcComponent} from '../../src/grpc.component';
 import {BookController} from './controllers/book.controller';
 
-export class MyApplication extends Application {
+export class TestApplication extends Application {
   options: ApplicationConfig;
   constructor(options: ApplicationConfig = {}) {
     // Allow options to replace the defined components array, if desired.
     super(options);
-    this.component(GrpcComponent);
-    this.controller(BookController);
-    this.options.port = this.options.port || 3000;
     this.bind(GrpcBindings.SERVER_CONFIG).to({
       host: '0.0.0.0',
       port: 50051,
       'grpc.max_send_message_length': 1024 * 1024 * 1024,
     });
     this.bind(GrpcBindings.GENERATOR_CONFIG).to({});
+    this.component(GrpcComponent);
+    this.controller(BookController);
+    this.options.port = this.options.port || 3000;
   }
 }

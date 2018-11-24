@@ -13,7 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const grpc = require("grpc");
 const book_grpc_pb_1 = require("./book_grpc_pb");
 const book_pb_1 = require("./book_pb");
-const grpc_decorator_1 = require("../decorators/grpc.decorator");
+const grpc_decorator_1 = require("../../../src/decorators/grpc.decorator");
 const log = console.log;
 let BookController = class BookController {
     async getBook(request) {

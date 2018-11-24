@@ -1,4 +1,12 @@
-import {inject, Context, MetadataInspector} from '@loopback/context';
+import {
+  inject,
+  Context,
+  MetadataInspector,
+  Constructor,
+  BindingScope,
+  MetadataMap,
+  BindingKey,
+} from '@loopback/context';
 import {
   Server,
   Application,
@@ -8,7 +16,11 @@ import {
 import {GrpcBindings} from './grpc.bindings';
 import * as grpc from 'grpc';
 import {ProtoGenerator} from './proto.generator';
-import {GrpcServiceMetadata} from './decorators/service.decorator';
+import {
+  GrpcServiceMetadata,
+  GrpcServiceMethodMetadata,
+} from './decorators/grpc.decorator';
+import {GrpcSequenceInterface, GrpcSequence} from './grpc.sequence';
 
 export class GrpcServer extends Context implements Server {
   private _host: string;
@@ -18,7 +30,7 @@ export class GrpcServer extends Context implements Server {
 
   constructor(
     @inject(CoreBindings.APPLICATION_INSTANCE) public app: Application,
-    @inject(GrpcBindings.SERVER_CONFIG) public config: GrpcServerConfig,
+    @inject(GrpcBindings.SERVER_CONFIG) private config: GrpcServerConfig,
     @inject(GrpcBindings.GENERATOR) private generator: ProtoGenerator,
   ) {
     super(app);
@@ -30,6 +42,8 @@ export class GrpcServer extends Context implements Server {
     this._port = this.config.port || 3000;
     delete this.config.host;
     delete this.config.port;
+    // don't need the sequence here
+    delete this.config.sequence;
 
     // create new grpc server with config
     this._server = new grpc.Server(this.config);
@@ -43,7 +57,7 @@ export class GrpcServer extends Context implements Server {
           `The controller ${controllerName} was not bound via .toClass()`,
         );
       }
-      this._setupControllerMethods(ctor, b.getValue(app));
+      this._setupControllerMethods(ctor);
     }
 
     // binding server to host:port
@@ -53,18 +67,112 @@ export class GrpcServer extends Context implements Server {
     );
   }
 
-  private _setupControllerMethods(
-    ctor: ControllerClass,
-    instance: grpc.UntypedServiceImplementation,
-  ) {
-    const metadata = MetadataInspector.getClassMetadata<GrpcServiceMetadata>(
-      GrpcBindings.SERVICE_DEFINITION,
-      ctor,
-    );
+  private _setupControllerMethods(ctor: ControllerClass) {
+    const controllerMetadata = MetadataInspector.getClassMetadata<
+      GrpcServiceMetadata
+    >(GrpcBindings.SERVICE_DEFINITION, ctor);
 
-    if (metadata) {
-      this._server.addService(metadata.serviceDefiniton, instance);
+    const controllerMethodsMetadata = MetadataInspector.getAllMethodMetadata<
+      GrpcServiceMethodMetadata
+    >(GrpcBindings.SERVICE_METHOD_DEFINITION, ctor.prototype);
+
+    if (controllerMetadata) {
+      this._server.addService(
+        controllerMetadata.serviceDefiniton,
+        this._wrapGrpcSequence(ctor, controllerMethodsMetadata),
+      );
     }
+  }
+
+  private _wrapGrpcSequence(
+    ctor: ControllerClass,
+    methodsMetadata?: MetadataMap<GrpcServiceMethodMetadata>,
+  ): grpc.UntypedServiceImplementation {
+    const context: Context = this;
+
+    context.bind(GrpcBindings.SERVER_CONTEXT).to(context);
+    context
+      .bind(GrpcBindings.TEMP_CONTROLLER)
+      .toClass(ctor)
+      .inScope(BindingScope.CONTEXT);
+
+    if (!methodsMetadata) {
+      return {};
+    }
+
+    return Object.keys(methodsMetadata).reduce(
+      (
+        wrappedMethods: grpc.UntypedServiceImplementation,
+        methodName: string,
+      ) => {
+        context.bind(GrpcBindings.TEMP_METHOD_NAME).to(methodName);
+        const bindingKey: BindingKey<GrpcSequence> = BindingKey.create<
+          GrpcSequence
+        >(GrpcBindings.SERVER_SEQUENCE);
+        const sequencePromise: Promise<GrpcSequence> = context.get(bindingKey);
+
+        const methodMetadata = methodsMetadata[methodName];
+        const {methodDefinition} = methodMetadata;
+        const {requestStream, responseStream} = methodDefinition;
+
+        if (requestStream) {
+          if (responseStream) {
+            // bidi stream
+            wrappedMethods[methodName] = function(
+              // tslint:disable-next-line:no-any
+              call: grpc.ServerDuplexStream<any, any>,
+            ) {
+              sequencePromise.then((sequence: GrpcSequence) =>
+                sequence.wrapBidiStreamingCall(call),
+              );
+            };
+          } else {
+            // client stream
+            wrappedMethods[methodName] = function(
+              // tslint:disable-next-line:no-any
+              call: grpc.ServerReadableStream<any>,
+              // tslint:disable-next-line:no-any
+              callback: grpc.sendUnaryData<any>,
+            ) {
+              sequencePromise
+                .then((sequence: GrpcSequence) =>
+                  sequence.wrapClientStreamingCall(call),
+                )
+                .then(result => callback(null, result))
+                .catch(error => callback(error, null));
+            };
+          }
+        } else {
+          if (responseStream) {
+            // server streaming
+            wrappedMethods[methodName] = function(
+              // tslint:disable-next-line:no-any
+              call: grpc.ServerWriteableStream<any>,
+            ) {
+              sequencePromise.then((sequence: GrpcSequence) =>
+                sequence.wrapServerStreamingCall(call),
+              );
+            };
+          } else {
+            // unary call
+            wrappedMethods[methodName] = function(
+              // tslint:disable-next-line:no-any
+              call: grpc.ServerUnaryCall<any>,
+              // tslint:disable-next-line:no-any
+              callback: grpc.sendUnaryData<any>,
+            ) {
+              sequencePromise
+                .then((sequence: GrpcSequence) => sequence.wrapUnaryCall(call))
+                .then(result => callback(null, result))
+                .catch(error => callback(error, null));
+            };
+          }
+        }
+
+        return wrappedMethods;
+      },
+      {},
+    );
   }
 
   get listening() {
@@ -95,6 +203,7 @@ export class GrpcServer extends Context implements Server {
 export type GrpcServerConfig = {
   host?: string;
   port?: number;
+  sequence?: Constructor<GrpcSequenceInterface>;
   // tslint:disable-next-line:no-any
   [key: string]: any;
 };

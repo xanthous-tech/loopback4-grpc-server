@@ -1,89 +1,30 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const child_process_1 = require("child_process");
+const util_1 = require("util");
+const proto_loader_1 = require("@grpc/proto-loader");
 const grpc = require("grpc");
 const path = require("path");
 const glob = require("glob");
-/**
- * @class GrpcGenerator
- * @author Jonathan Casarrubias <t: johncasarrubias>
- * @license MIT
- * @description GRPC TypeScript generator.
- * This class will iterate over a directory generating
- * corresponding typescript files from proto files.
- * Required for @grpc configuration and strict development.
- */
+const globAsync = util_1.promisify(glob);
+const execAsync = util_1.promisify(child_process_1.exec);
 class ProtoGenerator {
-    /**
-     * @method constructor
-     * @param config
-     * @author Jonathan Casarrubias <t: johncasarrubias>
-     * @description
-     * Receives generator configurations
-     */
     constructor(config) {
         this.config = config;
-        /**
-         * @property {[name: string]: grpc.GrpcObject} protos
-         * @author Jonathan Casarrubias <t: johncasarrubias>
-         * @description proto instances directory loaded during
-         * boot time and later being used by implemented grpc
-         * controllers.
-         */
-        this.protos = {};
     }
-    /**
-     * @method execute
-     * @author Jonathan Casarrubias <t: johncasarrubias>
-     * @license MIT
-     * @description This method will find and load all protos
-     * contained within the project directory. Saving in memory
-     * instances for those found protos for later usage.
-     */
-    execute() {
-        this.getProtoPaths().forEach((protoPath) => {
-            const protoName = protoPath.split('/').pop() || '';
-            this.protos[protoName] = this.loadProto(protoPath);
+    async execute() {
+        const protoPaths = await this.getProtoPaths();
+        for (const protoPath in protoPaths) {
+            await this.loadProto(protoPath);
             console.log(protoPath);
-            this.generateJS(protoPath);
-            this.generateTS(protoPath);
-        });
+            await this.generateJS(protoPath);
+            await this.generateTS(protoPath);
+        }
     }
-    /**
-     * @method getProto
-     * @param {string} name
-     * @returns {grpc.GrpcObject}
-     * @author Jonathan Casarrubias <t: johncasarrubias>
-     * @license MIT
-     * @description This method will return a proto instance
-     * from the proto list directory, previously loaded during
-     * boot time.
-     */
-    getProto(name) {
-        return this.protos[name];
+    async loadProto(protoPath) {
+        return grpc.loadPackageDefinition(await proto_loader_1.load(protoPath));
     }
-    /**
-     * @method loadProto
-     * @param {string} protoPath
-     * @returns {grpc.GrpcObject}
-     * @author Jonathan Casarrubias <t: johncasarrubias>
-     * @license MIT
-     * @description This method receive a proto file path and
-     * load that proto using the official grpc library.
-     */
-    loadProto(protoPath) {
-        const proto = grpc.load(protoPath);
-        return proto;
-    }
-    /**
-     * @method getProtoPaths
-     * @returns {string[]}
-     * @author Jonathan Casarrubias <t: johncasarrubias>
-     * @license MIT
-     * @description This method will getProtoPaths a directory look ahead and
-     * typescript files generations from found proto files.
-     */
-    getProtoPaths() {
+    async getProtoPaths() {
         const cwd = this.config && this.config.cwd;
         const protoPattern = this.config && this.config.protoPattern;
         const protoIgnores = this.config && this.config.protoIgnores;
@@ -93,41 +34,23 @@ class ProtoGenerator {
             ignore: protoIgnores || ['**/node_modules/**'],
             nodir: true,
         };
-        return glob.sync(pattern, options);
+        return globAsync(pattern, options);
     }
-    /**
-     * @method generateTS
-     * @param {string} proto
-     * @returns {Buffer}
-     * @author Jonathan Casarrubias <t: johncasarrubias>
-     * @license MIT
-     * @description This method will generate a typescript
-     * file representing the provided proto file by calling
-     * google's proto compiler and using @agreatfool's
-     * protoc-ts plugin.
-     */
-    generateTS(proto) {
+    async generateTS(proto) {
         const root = path.dirname(proto);
-        return child_process_1.execSync(`${path.join(__dirname, '../', '../', // Root of grpc module and not the dist dir
+        await execAsync(`${path.join(__dirname, '../', '../', // Root of grpc module and not the dist dir
         'compilers', process.platform, 'bin', 'protoc')} --plugin=protoc-gen-ts=${path.join(process.cwd(), 'node_modules', '.bin', 'protoc-gen-ts')} --ts_out ${root} -I ${root} ${proto}`);
+        await execAsync(`${path.join(__dirname, '../', '../', // Root of grpc module and not the dist dir
+        'compilers', process.platform, 'bin', 'protoc')} --plugin=protoc-gen-ts=${path.join(process.cwd(), 'node_modules', '.bin', 'protoc-gen-ts')} --ts_out ${'dist/' + root} -I ${root} ${proto}`);
+        return;
     }
-    /**
-     * @method generateJS
-     * @param {string} proto
-     * @returns {Buffer}
-     * @author Simon Liang
-     * @license MIT
-     * @description This method will generate a javascript
-     * file representing the provided proto file by calling
-     * google's proto compiler and using @agreatfool's
-     * protoc-ts plugin.
-     */
-    generateJS(proto) {
+    async generateJS(proto) {
         const root = path.dirname(proto);
         const protocPath = path.join(process.cwd(), 'node_modules', '.bin', 'grpc_tools_node_protoc');
-        return child_process_1.execSync(`${protocPath} --js_out=import_style=commonjs,binary:${'dist/' +
+        await execAsync(`${protocPath} --js_out=import_style=commonjs,binary:${'dist/' +
             root} --plugin=protoc-gen-gprc=${protocPath} --grpc_out=${'dist/' +
             root} -I ${root} ${proto}`);
+        return;
     }
 }
 exports.ProtoGenerator = ProtoGenerator;
