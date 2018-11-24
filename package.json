@@ -1,6 +1,6 @@
 {
   "name": "@xanthous/loopback4-grpc-server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "GRPC Server Component for Loopback v4",
   "keywords": [
     "loopback-application",
