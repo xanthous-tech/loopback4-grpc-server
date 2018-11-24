@@ -26,7 +26,7 @@ let GrpcServer = class GrpcServer extends context_1.Context {
         this._listening = false;
         // work out grpc server options
         this._host = this.config.host || '127.0.0.1';
-        this._port = this.config.port || 3000;
+        this._port = this.config.port || 3001;
         // create new grpc server with config
         this._server = new grpc.Server(this.config);
         // binding server to host:port
