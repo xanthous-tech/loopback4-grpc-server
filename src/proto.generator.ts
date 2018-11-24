@@ -14,10 +14,12 @@ export class ProtoGenerator {
   constructor(protected config?: Config.Generator) {}
 
   public async execute(): Promise<void> {
+    console.log('generating protos');
     const protoPaths: string[] = await this.getProtoPaths();
-    for (const protoPath in protoPaths) {
-      await this.loadProto(protoPath);
+    for (const i in protoPaths) {
+      const protoPath = protoPaths[i];
       console.log(protoPath);
+      await this.loadProto(protoPath);
       await this.generateJS(protoPath);
       await this.generateTS(protoPath);
     }
@@ -27,7 +29,7 @@ export class ProtoGenerator {
     return grpc.loadPackageDefinition(await loadProto(protoPath));
   }
 
-  public async getProtoPaths(): Promise<string[]> {
+  public getProtoPaths(): Promise<string[]> {
     const cwd = this.config && this.config.cwd;
     const protoPattern = this.config && this.config.protoPattern;
     const protoIgnores = this.config && this.config.protoIgnores;

@@ -13,10 +13,12 @@ class ProtoGenerator {
         this.config = config;
     }
     async execute() {
+        console.log('generating protos');
         const protoPaths = await this.getProtoPaths();
-        for (const protoPath in protoPaths) {
-            await this.loadProto(protoPath);
+        for (const i in protoPaths) {
+            const protoPath = protoPaths[i];
             console.log(protoPath);
+            await this.loadProto(protoPath);
             await this.generateJS(protoPath);
             await this.generateTS(protoPath);
         }
@@ -24,7 +26,7 @@ class ProtoGenerator {
     async loadProto(protoPath) {
         return grpc.loadPackageDefinition(await proto_loader_1.load(protoPath));
     }
-    async getProtoPaths() {
+    getProtoPaths() {
         const cwd = this.config && this.config.cwd;
         const protoPattern = this.config && this.config.protoPattern;
         const protoIgnores = this.config && this.config.protoIgnores;

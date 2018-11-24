@@ -26,7 +26,7 @@ export class GrpcServer extends Context implements Server {
   private _host: string;
   private _port: number;
   private _listening: boolean = false;
-  _server: grpc.Server;
+  private _server: grpc.Server;
 
   constructor(
     @inject(CoreBindings.APPLICATION_INSTANCE) public app: Application,
@@ -34,9 +34,6 @@ export class GrpcServer extends Context implements Server {
     @inject(GrpcBindings.GENERATOR) private generator: ProtoGenerator,
   ) {
     super(app);
-    // generate protos first
-    this.generator.execute();
-
     // work out grpc server options
     this._host = this.config.host || '127.0.0.1';
     this._port = this.config.port || 3000;
@@ -48,6 +45,14 @@ export class GrpcServer extends Context implements Server {
     // create new grpc server with config
     this._server = new grpc.Server(this.config);
 
+    // binding server to host:port
+    this._server.bind(
+      `${this._host}:${this._port}`,
+      grpc.ServerCredentials.createInsecure(),
+    );
+  }
+
+  private _setUpServer() {
     // Setup Controllers
     for (const b of this.find('controllers.*')) {
       const controllerName = b.key.replace(/^controllers\./, '');
@@ -59,12 +64,6 @@ export class GrpcServer extends Context implements Server {
       }
       this._setupControllerMethods(ctor);
     }
-
-    // binding server to host:port
-    this._server.bind(
-      `${this._host}:${this._port}`,
-      grpc.ServerCredentials.createInsecure(),
-    );
   }
 
   private _setupControllerMethods(ctor: ControllerClass) {
@@ -180,9 +179,11 @@ export class GrpcServer extends Context implements Server {
   }
 
   async start(): Promise<void> {
-    this._server.start();
+    await this.generator.execute();
+    this._setUpServer();
     this._listening = true;
     console.log(`gRPC server listening at ${this._host}:${this._port}`);
+    this._server.start();
   }
 
   async stop(): Promise<void> {

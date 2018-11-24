@@ -24,8 +24,6 @@ let GrpcServer = class GrpcServer extends context_1.Context {
         this.config = config;
         this.generator = generator;
         this._listening = false;
-        // generate protos first
-        this.generator.execute();
         // work out grpc server options
         this._host = this.config.host || '127.0.0.1';
         this._port = this.config.port || 3000;
@@ -35,6 +33,10 @@ let GrpcServer = class GrpcServer extends context_1.Context {
         delete this.config.sequence;
         // create new grpc server with config
         this._server = new grpc.Server(this.config);
+        // binding server to host:port
+        this._server.bind(`${this._host}:${this._port}`, grpc.ServerCredentials.createInsecure());
+    }
+    _setUpServer() {
         // Setup Controllers
         for (const b of this.find('controllers.*')) {
             const controllerName = b.key.replace(/^controllers\./, '');
@@ -44,8 +46,6 @@ let GrpcServer = class GrpcServer extends context_1.Context {
             }
             this._setupControllerMethods(ctor);
         }
-        // binding server to host:port
-        this._server.bind(`${this._host}:${this._port}`, grpc.ServerCredentials.createInsecure());
     }
     _setupControllerMethods(ctor) {
         const controllerMetadata = context_1.MetadataInspector.getClassMetadata(grpc_bindings_1.GrpcBindings.SERVICE_DEFINITION, ctor);
@@ -124,9 +124,11 @@ let GrpcServer = class GrpcServer extends context_1.Context {
         return this._listening;
     }
     async start() {
-        this._server.start();
+        await this.generator.execute();
+        this._setUpServer();
         this._listening = true;
         console.log(`gRPC server listening at ${this._host}:${this._port}`);
+        this._server.start();
     }
     async stop() {
         // stops receiving calls first, and try to shutdown
