@@ -18,6 +18,7 @@ const log = console.log;
 let BookController = class BookController {
     async getBook(request) {
         const book = new book_pb_1.Book();
+        book.setIsbn(request.getIsbn());
         book.setTitle('DefaultBook');
         book.setAuthor('DefaultAuthor');
         log(`[getBook] Done: ${JSON.stringify(book.toObject())}`);

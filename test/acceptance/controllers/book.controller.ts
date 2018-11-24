@@ -21,6 +21,7 @@ export class BookController {
   async getBook(request: GetBookRequest): Promise<Book> {
     const book = new Book();
 
+    book.setIsbn(request.getIsbn());
     book.setTitle('DefaultBook');
     book.setAuthor('DefaultAuthor');
 
