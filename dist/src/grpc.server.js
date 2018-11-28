@@ -47,10 +47,12 @@ let GrpcServer = class GrpcServer extends context_1.Context {
         const controllerMetadata = context_1.MetadataInspector.getClassMetadata(grpc_bindings_1.GrpcBindings.SERVICE_DEFINITION, ctor);
         const controllerMethodsMetadata = context_1.MetadataInspector.getAllMethodMetadata(grpc_bindings_1.GrpcBindings.SERVICE_METHOD_DEFINITION, ctor.prototype);
         if (controllerMetadata) {
-            this._server.addService(controllerMetadata.serviceDefiniton, this._wrapGrpcSequence(ctor, controllerMethodsMetadata));
+            this._server.addService(controllerMetadata, this._wrapGrpcSequence(ctor, controllerMethodsMetadata));
         }
     }
-    _wrapGrpcSequence(ctor, methodsMetadata) {
+    _wrapGrpcSequence(ctor, 
+    // tslint:disable-next-line:no-any
+    methodsMetadata) {
         const context = this;
         context.bind(grpc_bindings_1.GrpcBindings.SERVER_CONTEXT).to(context);
         context
@@ -65,11 +67,11 @@ let GrpcServer = class GrpcServer extends context_1.Context {
             const bindingKey = context_1.BindingKey.create(grpc_bindings_1.GrpcBindings.SERVER_SEQUENCE);
             const sequencePromise = context.get(bindingKey);
             const methodMetadata = methodsMetadata[methodName];
-            const { methodDefinition } = methodMetadata;
+            const methodDefinition = methodMetadata;
             const { requestStream, responseStream } = methodDefinition;
             if (requestStream) {
                 if (responseStream) {
-                    // bidi stream
+                    // bi-directional stream
                     wrappedMethods[methodName] = function (
                     // tslint:disable-next-line:no-any
                     call) {

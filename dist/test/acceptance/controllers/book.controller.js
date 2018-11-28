@@ -70,41 +70,31 @@ let BookController = class BookController {
     }
 };
 __decorate([
-    grpc_decorator_1.grpcServiceMethod({
-        methodDefinition: book_grpc_pb_1.BookServiceService.getBook,
-    }),
+    grpc_decorator_1.GrpcServiceMethod(book_grpc_pb_1.BookServiceService.getBook),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [book_pb_1.GetBookRequest]),
     __metadata("design:returntype", Promise)
 ], BookController.prototype, "getBook", null);
 __decorate([
-    grpc_decorator_1.grpcServiceMethod({
-        methodDefinition: book_grpc_pb_1.BookServiceService.getBooks,
-    }),
+    grpc_decorator_1.GrpcServiceMethod(book_grpc_pb_1.BookServiceService.getBooks),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [grpc.ServerDuplexStream]),
     __metadata("design:returntype", void 0)
 ], BookController.prototype, "getBooks", null);
 __decorate([
-    grpc_decorator_1.grpcServiceMethod({
-        methodDefinition: book_grpc_pb_1.BookServiceService.getBooksViaAuthor,
-    }),
+    grpc_decorator_1.GrpcServiceMethod(book_grpc_pb_1.BookServiceService.getBooksViaAuthor),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [grpc.ServerWriteableStream]),
     __metadata("design:returntype", void 0)
 ], BookController.prototype, "getBooksViaAuthor", null);
 __decorate([
-    grpc_decorator_1.grpcServiceMethod({
-        methodDefinition: book_grpc_pb_1.BookServiceService.getGreatestBook,
-    }),
+    grpc_decorator_1.GrpcServiceMethod(book_grpc_pb_1.BookServiceService.getGreatestBook),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [grpc.ServerReadableStream]),
     __metadata("design:returntype", Promise)
 ], BookController.prototype, "getGreatestBook", null);
 BookController = __decorate([
-    grpc_decorator_1.grpcService({
-        serviceDefiniton: book_grpc_pb_1.BookServiceService,
-    })
+    grpc_decorator_1.GrpcService(book_grpc_pb_1.BookServiceService)
 ], BookController);
 exports.BookController = BookController;
 //# sourceMappingURL=book.controller.js.map
