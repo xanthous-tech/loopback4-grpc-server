@@ -13,14 +13,14 @@ import {
   CoreBindings,
   ControllerClass,
 } from '@loopback/core';
-import {GrpcBindings} from './grpc.bindings';
+import { GrpcBindings } from './grpc.bindings';
 import * as grpc from 'grpc';
-import {ProtoGenerator} from './proto.generator';
+import { ProtoGenerator } from './proto.generator';
 import {
   GrpcServiceMetadata,
   GrpcServiceMethodMetadata,
 } from './decorators/grpc.decorator';
-import {GrpcSequenceInterface, GrpcSequence} from './grpc.sequence';
+import { GrpcSequenceInterface, GrpcSequence } from './grpc.sequence';
 
 export class GrpcServer extends Context implements Server {
   private _host: string;
@@ -64,16 +64,18 @@ export class GrpcServer extends Context implements Server {
 
   private _setupControllerMethods(ctor: ControllerClass) {
     const controllerMetadata = MetadataInspector.getClassMetadata<
-      GrpcServiceMetadata
-    >(GrpcBindings.SERVICE_DEFINITION, ctor);
+      // tslint:disable-next-line:no-any
+      GrpcServiceMetadata<any>
+      >(GrpcBindings.SERVICE_DEFINITION, ctor);
 
     const controllerMethodsMetadata = MetadataInspector.getAllMethodMetadata<
-      GrpcServiceMethodMetadata
-    >(GrpcBindings.SERVICE_METHOD_DEFINITION, ctor.prototype);
+      // tslint:disable-next-line:no-any
+      GrpcServiceMethodMetadata<any, any>
+      >(GrpcBindings.SERVICE_METHOD_DEFINITION, ctor.prototype);
 
     if (controllerMetadata) {
       this._server.addService(
-        controllerMetadata.serviceDefiniton,
+        controllerMetadata,
         this._wrapGrpcSequence(ctor, controllerMethodsMetadata),
       );
     }
@@ -81,7 +83,8 @@ export class GrpcServer extends Context implements Server {
 
   private _wrapGrpcSequence(
     ctor: ControllerClass,
-    methodsMetadata?: MetadataMap<GrpcServiceMethodMetadata>,
+    // tslint:disable-next-line:no-any
+    methodsMetadata?: MetadataMap<GrpcServiceMethodMetadata<any, any>>,
   ): grpc.UntypedServiceImplementation {
     const context: Context = this;
 
@@ -103,17 +106,17 @@ export class GrpcServer extends Context implements Server {
         context.bind(GrpcBindings.TEMP_METHOD_NAME).to(methodName);
         const bindingKey: BindingKey<GrpcSequence> = BindingKey.create<
           GrpcSequence
-        >(GrpcBindings.SERVER_SEQUENCE);
+          >(GrpcBindings.SERVER_SEQUENCE);
         const sequencePromise: Promise<GrpcSequence> = context.get(bindingKey);
 
         const methodMetadata = methodsMetadata[methodName];
-        const {methodDefinition} = methodMetadata;
-        const {requestStream, responseStream} = methodDefinition;
+        const methodDefinition = methodMetadata;
+        const { requestStream, responseStream } = methodDefinition;
 
         if (requestStream) {
           if (responseStream) {
-            // bidi stream
-            wrappedMethods[methodName] = function(
+            // bi-directional stream
+            wrappedMethods[methodName] = function (
               // tslint:disable-next-line:no-any
               call: grpc.ServerDuplexStream<any, any>,
             ) {
@@ -123,7 +126,7 @@ export class GrpcServer extends Context implements Server {
             };
           } else {
             // client stream
-            wrappedMethods[methodName] = function(
+            wrappedMethods[methodName] = function (
               // tslint:disable-next-line:no-any
               call: grpc.ServerReadableStream<any>,
               // tslint:disable-next-line:no-any
@@ -140,7 +143,7 @@ export class GrpcServer extends Context implements Server {
         } else {
           if (responseStream) {
             // server streaming
-            wrappedMethods[methodName] = function(
+            wrappedMethods[methodName] = function (
               // tslint:disable-next-line:no-any
               call: grpc.ServerWriteableStream<any>,
             ) {
@@ -150,7 +153,7 @@ export class GrpcServer extends Context implements Server {
             };
           } else {
             // unary call
-            wrappedMethods[methodName] = function(
+            wrappedMethods[methodName] = function (
               // tslint:disable-next-line:no-any
               call: grpc.ServerUnaryCall<any>,
               // tslint:disable-next-line:no-any

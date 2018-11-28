@@ -54,6 +54,7 @@
     "@loopback/build": "^1.0.1",
     "@loopback/testlab": "^1.0.1",
     "@types/node": "^10.11.2",
-    "@types/protobufjs": "^6.0.0"
+    "@types/protobufjs": "^6.0.0",
+    "tslint": "^5.11.0"
   }
 }

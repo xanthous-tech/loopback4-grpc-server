@@ -2,22 +2,18 @@
 
 import * as grpc from 'grpc';
 
-import {BookServiceService} from './book_grpc_pb';
-import {Book, GetBookRequest, GetBookViaAuthor} from './book_pb';
+import { BookServiceService } from './book_grpc_pb';
+import { Book, GetBookRequest, GetBookViaAuthor } from './book_pb';
 import {
-  grpcService,
-  grpcServiceMethod,
+  GrpcService,
+  GrpcServiceMethod,
 } from '../../../src/decorators/grpc.decorator';
 
 const log = console.log;
 
-@grpcService({
-  serviceDefiniton: BookServiceService,
-})
+@GrpcService(BookServiceService)
 export class BookController {
-  @grpcServiceMethod({
-    methodDefinition: BookServiceService.getBook,
-  })
+  @GrpcServiceMethod(BookServiceService.getBook)
   async getBook(request: GetBookRequest): Promise<Book> {
     const book = new Book();
 
@@ -29,9 +25,7 @@ export class BookController {
     return book;
   }
 
-  @grpcServiceMethod({
-    methodDefinition: BookServiceService.getBooks,
-  })
+  @GrpcServiceMethod(BookServiceService.getBooks)
   getBooks(call: grpc.ServerDuplexStream<GetBookRequest, Book>) {
     call.on('data', (request: GetBookRequest) => {
       const reply = new Book();
@@ -47,9 +41,7 @@ export class BookController {
     });
   }
 
-  @grpcServiceMethod({
-    methodDefinition: BookServiceService.getBooksViaAuthor,
-  })
+  @GrpcServiceMethod(BookServiceService.getBooksViaAuthor)
   getBooksViaAuthor(call: grpc.ServerWriteableStream<GetBookViaAuthor>) {
     log(
       `[getBooksViaAuthor] Request: ${JSON.stringify(call.request.toObject())}`,
@@ -66,9 +58,7 @@ export class BookController {
     call.end();
   }
 
-  @grpcServiceMethod({
-    methodDefinition: BookServiceService.getGreatestBook,
-  })
+  @GrpcServiceMethod(BookServiceService.getGreatestBook)
   async getGreatestBook(
     call: grpc.ServerReadableStream<GetBookRequest>,
   ): Promise<Book> {

@@ -1,29 +1,26 @@
 import * as grpc from 'grpc';
-import {ClassDecoratorFactory, MethodDecoratorFactory} from '@loopback/core';
-import {GrpcBindings} from '../grpc.bindings';
+import { ClassDecoratorFactory, MethodDecoratorFactory } from '@loopback/core';
+import { GrpcBindings } from '../grpc.bindings';
 
-export interface GrpcServiceMetadata {
-  serviceDefiniton: grpc.ServiceDefinition<grpc.UntypedServiceImplementation>;
-}
+export type GrpcServiceMetadata<T> =
+  grpc.ServiceDefinition<T>;
 
-export interface GrpcServiceMethodMetadata {
-  // tslint:disable-next-line:no-any
-  methodDefinition: grpc.MethodDefinition<any, any>;
-}
+export type GrpcServiceMethodMetadata<RequestType, ResponseType> =
+  grpc.MethodDefinition<RequestType, ResponseType>;
 
-export function grpcService(
-  serviceMetadata: GrpcServiceMetadata,
+export function GrpcService<T>(
+  serviceMetadata: GrpcServiceMetadata<T>,
 ): ClassDecorator {
-  return ClassDecoratorFactory.createDecorator<GrpcServiceMetadata>(
+  return ClassDecoratorFactory.createDecorator<GrpcServiceMetadata<T>>(
     GrpcBindings.SERVICE_DEFINITION,
     serviceMetadata,
   );
 }
 
-export function grpcServiceMethod(
-  serviceMethodMetadata: GrpcServiceMethodMetadata,
+export function GrpcServiceMethod<RequestType, ResponseType>(
+  serviceMethodMetadata: GrpcServiceMethodMetadata<RequestType, ResponseType>,
 ): MethodDecorator {
-  return MethodDecoratorFactory.createDecorator<GrpcServiceMethodMetadata>(
+  return MethodDecoratorFactory.createDecorator<GrpcServiceMethodMetadata<RequestType, ResponseType>>(
     GrpcBindings.SERVICE_METHOD_DEFINITION,
     serviceMethodMetadata,
   );
