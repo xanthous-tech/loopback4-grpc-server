@@ -15,12 +15,12 @@ import {
 } from '@loopback/core';
 import { GrpcBindings } from './grpc.bindings';
 import * as grpc from 'grpc';
-import { ProtoGenerator } from './proto.generator';
 import {
   GrpcServiceMetadata,
   GrpcServiceMethodMetadata,
 } from './decorators/grpc.decorator';
 import { GrpcSequenceInterface, GrpcSequence } from './grpc.sequence';
+import { ProtoGenerator } from './proto.generator';
 
 export class GrpcServer extends Context implements Server {
   private _host: string;
@@ -31,7 +31,7 @@ export class GrpcServer extends Context implements Server {
   constructor(
     @inject(CoreBindings.APPLICATION_INSTANCE) public app: Application,
     @inject(GrpcBindings.SERVER_CONFIG) private config: GrpcServerConfig,
-    @inject(GrpcBindings.GENERATOR) private generator: ProtoGenerator,
+    @inject(GrpcBindings.GENERATOR) generator: ProtoGenerator,
   ) {
     super(app);
     // work out grpc server options
@@ -46,6 +46,9 @@ export class GrpcServer extends Context implements Server {
       `${this._host}:${this._port}`,
       grpc.ServerCredentials.createInsecure(),
     );
+
+    // Generate protos on start.
+    generator.execute();
   }
 
   private _setUpServer() {
@@ -178,7 +181,6 @@ export class GrpcServer extends Context implements Server {
   }
 
   async start(): Promise<void> {
-    await this.generator.execute();
     this._setUpServer();
     this._listening = true;
     console.log(`gRPC server listening at ${this._host}:${this._port}`);

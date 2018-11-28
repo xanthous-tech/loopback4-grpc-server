@@ -7,17 +7,12 @@ import {
   Application,
   inject,
 } from '@loopback/core';
-import {GrpcBindings} from './grpc.bindings';
-import {GeneratorProvider} from './providers/generator.provider';
-import {GrpcServer, GrpcServerConfig} from './grpc.server';
-import {GrpcSequence} from './grpc.sequence';
+import { GrpcBindings } from './grpc.bindings';
+import { GrpcServer, GrpcServerConfig } from './grpc.server';
+import { GrpcSequence } from './grpc.sequence';
 
 export class GrpcComponent implements Component {
-  providers: ProviderMap = {
-    [GrpcBindings.GENERATOR]: GeneratorProvider,
-  };
-
-  servers: {[name: string]: Constructor<Server>} = {
+  servers: { [name: string]: Constructor<Server> } = {
     GrpcServer,
   };
 

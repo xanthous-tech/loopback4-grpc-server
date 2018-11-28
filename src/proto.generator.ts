@@ -1,85 +1,79 @@
-import {exec} from 'child_process';
-import {promisify} from 'util';
-import {load as loadProto} from '@grpc/proto-loader';
+import { loadSync as loadProtoSync } from '@grpc/proto-loader';
+import { execSync } from 'child_process';
+import { GlobSync } from 'glob';
 import * as grpc from 'grpc';
 import * as path from 'path';
-import * as glob from 'glob';
 
-import {Config} from './types';
-
-const globAsync = promisify(glob);
-const execAsync = promisify(exec);
+import { Config } from './types';
 
 export class ProtoGenerator {
-  constructor(protected config?: Config.Generator) {}
+  protected config: Required<Config.Generator>;
 
-  public async execute(): Promise<void> {
+  constructor(config?: Config.Generator) {
+    this.config = <Required<Config.Generator>>Object.assign(
+      {},
+      config,
+      Private.defaultConfig
+    );
+  }
+
+  public execute(): void {
     console.log('generating protos');
-    const protoPaths: string[] = await this.getProtoPaths();
-    for (const i in protoPaths) {
-      const protoPath = protoPaths[i];
+    const protoPaths: string[] = this.getProtoPaths();
+
+    for (const protoPath of protoPaths) {
       console.log(protoPath);
-      await this.loadProto(protoPath);
-      await this.generateJS(protoPath);
-      await this.generateTS(protoPath);
+
+      this.loadProto(protoPath);
+      this.generateJS(protoPath);
+      this.generateTS(protoPath);
     }
   }
 
-  public async loadProto(protoPath: string): Promise<grpc.GrpcObject> {
-    return grpc.loadPackageDefinition(await loadProto(protoPath));
+  public loadProto(protoPath: string): grpc.GrpcObject {
+    return grpc.loadPackageDefinition(loadProtoSync(protoPath));
   }
 
-  public getProtoPaths(): Promise<string[]> {
-    const cwd = this.config && this.config.cwd;
-    const protoPattern = this.config && this.config.protoPattern;
-    const protoIgnores = this.config && this.config.protoIgnores;
-    const pattern = protoPattern || '**/*.proto';
+  public getProtoPaths(): string[] {
+    const {
+      protoPattern: pattern,
+      protoIgnores: ignore,
+      cwd,
+    } = this.config;
+
     const options = {
-      cwd: cwd || process.cwd(),
-      ignore: protoIgnores || ['**/node_modules/**'],
+      cwd,
+      ignore,
       nodir: true,
     };
-    return globAsync(pattern, options);
+
+    const glob = new GlobSync(pattern, options);
+    return glob.found;
   }
 
-  private async generateTS(proto: string): Promise<void> {
+  private generateTS(proto: string): void {
     const root = path.dirname(proto);
-    await execAsync(
-      `${path.join(
-        __dirname,
-        '../',
-        '../', // Root of grpc module and not the dist dir
-        'compilers',
-        process.platform,
-        'bin',
-        'protoc',
-      )} --plugin=protoc-gen-ts=${path.join(
-        process.cwd(),
-        'node_modules',
-        '.bin',
-        'protoc-gen-ts',
-      )} --ts_out ${root} -I ${root} ${proto}`,
-    );
-    await execAsync(
-      `${path.join(
-        __dirname,
-        '../',
-        '../', // Root of grpc module and not the dist dir
-        'compilers',
-        process.platform,
-        'bin',
-        'protoc',
-      )} --plugin=protoc-gen-ts=${path.join(
-        process.cwd(),
-        'node_modules',
-        '.bin',
-        'protoc-gen-ts',
-      )} --ts_out ${'dist/' + root} -I ${root} ${proto}`,
-    );
-    return;
+
+    const getCommand = (outDir: string): string => `${path.join(
+      __dirname,
+      '../',
+      '../', // Root of grpc module and not the dist dir
+      'compilers',
+      process.platform,
+      'bin',
+      'protoc',
+    )} --plugin=protoc-gen-ts=${path.join(
+      process.cwd(),
+      'node_modules',
+      '.bin',
+      'protoc-gen-ts',
+    )} --ts_out ${outDir} -I ${root} ${proto}`;
+
+    execSync(getCommand(root));
+    execSync(getCommand('dist/' + root));
   }
 
-  private async generateJS(proto: string): Promise<void> {
+  private generateJS(proto: string): void {
     const root = path.dirname(proto);
 
     const protocPath = path.join(
@@ -89,12 +83,18 @@ export class ProtoGenerator {
       'grpc_tools_node_protoc',
     );
 
-    await execAsync(
+    execSync(
       `${protocPath} --js_out=import_style=commonjs,binary:${'dist/' +
-        root} --plugin=protoc-gen-gprc=${protocPath} --grpc_out=${'dist/' +
-        root} -I ${root} ${proto}`,
+      root} --plugin=protoc-gen-gprc=${protocPath} --grpc_out=${'dist/' +
+      root} -I ${root} ${proto}`,
     );
+  }
+}
 
-    return;
+namespace Private {
+  export const defaultConfig = <Config.Generator>{
+    protoPattern: '**\/*proto',
+    protoIgnores: ['**\/node_modules\/**'],
+    cwd: process.cwd(),
   }
 }

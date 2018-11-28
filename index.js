@@ -7,10 +7,11 @@ module.exports = require('./dist');
 
 if (require.main === module) {
   // Run the application
-  const {TestApplication} = require('./dist/test/acceptance/application');
+  const { TestApplication } = require('./dist/test/acceptance/application');
 
   const main = async (options = {}) => {
     const app = new TestApplication(options);
+    await app.boot();
     await app.start();
     console.log(`Server is running on port ${app.options.port}`);
     return app;

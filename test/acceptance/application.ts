@@ -3,12 +3,12 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import {Application, ApplicationConfig} from '@loopback/core';
-import {GrpcBindings} from '../../src/grpc.bindings';
-import {GrpcComponent} from '../../src/grpc.component';
-import {BookController} from './controllers/book.controller';
+import { BootMixin } from '@loopback/boot';
+import { Application, ApplicationConfig } from '@loopback/core';
+import { GrpcBindings } from '../../src/grpc.bindings';
+import { GrpcComponent } from '../../src/grpc.component';
 
-export class TestApplication extends Application {
+export class TestApplication extends BootMixin(Application) {
   options: ApplicationConfig;
   constructor(options: ApplicationConfig = {}) {
     // Allow options to replace the defined components array, if desired.
@@ -20,7 +20,16 @@ export class TestApplication extends Application {
     });
     this.bind(GrpcBindings.GENERATOR_CONFIG).to({});
     this.component(GrpcComponent);
-    this.controller(BookController);
     this.options.port = this.options.port || 3000;
+
+    this.projectRoot = __dirname;
+    this.bootOptions = {
+      controllers: {
+        // Customize ControllerBooter Conventions here
+        dirs: ['controllers'],
+        extensions: ['.controller.js'],
+        nested: true,
+      },
+    };
   }
 }
