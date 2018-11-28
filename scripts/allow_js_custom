@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+main()
+{
+    if [[ "${INCLUDE_DIRS}" == "" ]]; then
+        INCLUDE_DIRS=(src)
+    fi
+    
+    local JS_FILES=$(find ${INCLUDE_DIRS[@]} -name '*.js');
+    
+    for file in ${JS_FILES}; do
+        cp_with_generate_dir $file;
+    done;
+}
+
+cp_with_generate_dir()
+{
+    local FILE_TO_COPY="$1"
+    local DIRNAME_TO_COPY="./${OUTPUT_DIR}/$(dirname $1)"
+    
+    if [[ ! -d "${DIRNAME_TO_COPY}" ]]; then
+        mkdir -p "${DIRNAME_TO_COPY}";
+    fi
+    
+    echo $DIRNAME_TO_COPY;
+    cp $FILE_TO_COPY $DIRNAME_TO_COPY;
+}
+
+main;
